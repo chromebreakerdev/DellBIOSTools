@@ -108,8 +108,10 @@ def _find_powershell_exe() -> Optional[str]:
                 if os.path.exists(path):
                     return path
             else:
-                p = subprocess.run([path, "-NoProfile", "-NoLogo", "-Command", "$PSVersionTable.PSEdition"],
-                                   capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                p = subprocess.run(
+                    [path, "-NoProfile", "-NoLogo", "-Command", "$PSVersionTable.PSEdition"],
+                    capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW
+                )
                 if p.returncode == 0:
                     return path
         except Exception:
@@ -128,6 +130,11 @@ def get_asset_tag_cim_only() -> str:
     """
     Read AssetTag using PowerShell CIM first, then legacy WMI.
     Avoids Dell WMI provider and dcmscli (Win11-friendly).
+
+    Returns:
+        - non-empty normalized tag string if one exists
+        - "" (empty string) if CIM/WMI ran successfully but tag is actually blank/placeholder
+        - raises RuntimeError only when the query itself fails
     """
     ps = _find_powershell_exe()
     if not ps:
@@ -142,18 +149,30 @@ def get_asset_tag_cim_only() -> str:
         "$t=(Get-WmiObject -Class Win32_SystemEnclosure).SMBIOSAssetTag; if ($t) { $t }",
     ]
     last_err = None
+    saw_ok = False
+
     for sc in scripts:
         try:
             p = _run_powershell(ps, sc)
             out = (p.stdout or "").strip()
-            if p.returncode == 0 and out:
-                tag = _normalize_asset(out.splitlines()[0])
-                if tag:
-                    return tag
-            if p.returncode != 0 and (p.stderr or "").strip():
-                last_err = (p.stderr or "").strip()
+
+            # Script executed successfully, even if the output is blank
+            if p.returncode == 0:
+                saw_ok = True
+                if out:
+                    tag = _normalize_asset(out.splitlines()[0])
+                    if tag:
+                        return tag
+            else:
+                if (p.stderr or "").strip():
+                    last_err = (p.stderr or "").strip()
         except Exception as e:
             last_err = str(e)
+
+    # If at least one script ran OK but we never got a real tag, treat as "no tag set"
+    if saw_ok and not last_err:
+        return ""
+
     raise RuntimeError(f"WMI/CIM AssetTag read failed. {last_err or 'No output.'}")
 
 ################################################################################
@@ -276,8 +295,11 @@ def get_asset_tag_cctk(cctk_path):
     rc, out, err = run_cctk(cctk_path, ["--asset"])
     asset = _parse_asset_from_text(out) or _parse_asset_from_text(err)
     asset = _normalize_asset(asset)
-    if rc == 0 and asset:
-        return asset
+
+    # Treat rc == 0 as success even if the tag is blank/placeholder.
+    if rc == 0:
+        return asset  # may be "" if no tag is actually set
+
     raise RuntimeError(
         "CCTK --asset failed.\n"
         f"Return code: {rc}\n\nSTDOUT:\n{out}\n\nSTDERR:\n{err}\n\n"
@@ -288,8 +310,9 @@ def get_asset_tag_cctk(cctk_path):
     )
 
 def set_asset_tag(cctk_path, new_tag, setup_pwd=None):
-    if not new_tag:
-        raise ValueError("Empty asset tag")
+    # Allow empty string to CLEAR the tag (CCTK --asset=).
+    if new_tag is None:
+        raise ValueError("new_tag must be a string; use '' to clear.")
     args = [f"--asset={new_tag}"]
     if setup_pwd:
         args.append(f"--valsetuppwd={setup_pwd}")
@@ -833,15 +856,20 @@ class BiosUnlockerTab:
         self.entry = tk.Entry(file_frame, width=50, borderwidth=0, font=("Arial", 9)); self.entry.pack(side=tk.LEFT, padx=5)
         tk.Button(file_frame, text="Browse", command=self.browse_file, bg="#4682B4", fg="white").pack(side=tk.RIGHT, padx=5)
 
-        self.patch_button = tk.Button(self.frame, text="Patch BIOS", command=self.patch_bios,
-                                      bg="white", fg="black", font=("Arial", 10, "bold"),
-                                      padx=10, state=tk.DISABLED, borderwidth=1, relief="solid",
-                                      activebackground="#E0E0E0")
+        self.patch_button = tk.Button(
+            self.frame, text="Patch BIOS", command=self.patch_bios,
+            bg="white", fg="black", font=("Arial", 10, "bold"),
+            padx=10, state=tk.DISABLED, borderwidth=1, relief="solid",
+            activebackground="#E0E0E0"
+        )
         self.patch_button.pack(pady=10)
 
         log_frame = tk.Frame(self.frame, bg="#36454F"); log_frame.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
         tk.Label(log_frame, text="Patching Log:", bg="#36454F", fg="white", anchor="w").pack(fill=tk.X)
-        self.log_text = scrolledtext.ScrolledText(log_frame, height=18, state=tk.DISABLED, bg="black", fg="#00FF00", font=("Consolas", 9))
+        self.log_text = scrolledtext.ScrolledText(
+            log_frame, height=18, state=tk.DISABLED,
+            bg="black", fg="#00FF00", font=("Consolas", 9)
+        )
         self.log_text.pack(fill=tk.BOTH, expand=True)
 
         about_text = """ English Version of the Rex98-8FC8-Patcher
@@ -859,18 +887,23 @@ Use with caution: Improper BIOS modification can damage your system."""
         self.log_text.see(tk.END); self.log_text.config(state=tk.DISABLED); self.parent.update()
 
     def browse_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("BIOS Files", "*.bin *.rom *.fd *.bio"),("All Files", "*.*")])
+        file_path = filedialog.askopenfilename(
+            filetypes=[("BIOS Files", "*.bin *.rom *.fd *.bio"),("All Files", "*.*")]
+        )
         if file_path:
             self.entry.delete(0, tk.END); self.entry.insert(0, file_path)
-            self.log_message(f"Selected file: {file_path}"); self.patch_button.config(text="Patch BIOS", state=tk.NORMAL)
+            self.log_message(f"Selected file: {file_path}")
+            self.patch_button.config(text="Patch BIOS", state=tk.NORMAL)
 
     def patch_bios(self):
         file_path = self.entry.get()
         if not file_path or not os.path.exists(file_path):
-            messagebox.showerror("Error", "Please select a valid BIOS file first!"); return
+            messagebox.showerror("Error", "Please select a valid BIOS file first!")
+            return
         self.log_message("Starting BIOS patching process...")
         try:
-            with open(file_path, "rb") as f: bios_data = bytearray(f.read())
+            with open(file_path, "rb") as f:
+                bios_data = bytearray(f.read())
             file_name = os.path.basename(file_path); file_size = len(bios_data)
             self.log_message(f"Loaded BIOS file: {file_name} (Size: {file_size} bytes)")
 
@@ -881,7 +914,11 @@ Use with caution: Improper BIOS modification can damage your system."""
                 self.log_message(f"Intel signature found at offset 0x{intel_offset:X}")
             else:
                 self.log_message("Intel signature not found")
-                messagebox.showerror("Error", "Intel signature not found. This may not be a valid BIOS file."); return
+                messagebox.showerror(
+                    "Error",
+                    "Intel signature not found. This may not be a valid BIOS file."
+                )
+                return
 
             self.log_message("Checking for first pattern...")
             first_pattern = r"^00FCAA[0-9A-F]{2,4}000000[0-9A-F]{2,}.*$"
@@ -889,7 +926,9 @@ Use with caution: Improper BIOS modification can damage your system."""
             first_offsets = find_pattern_matches(bios_data, first_pattern)
             for offset in first_offsets:
                 self.log_message(f"Pattern found at offset 0x{offset:X} and replaced.")
-                bios_data[offset:offset+6] = first_replace_bytes + bytes([0] * (6 - len(first_replace_bytes)))
+                bios_data[offset:offset+6] = first_replace_bytes + bytes(
+                    [0] * (6 - len(first_replace_bytes))
+                )
 
             self.log_message("Almost done! Checking second pattern...")
             second_pattern = r"^00FDAA[0-9A-F]{2,4}000000[0-9A-F]{2,}.*$"
@@ -897,21 +936,40 @@ Use with caution: Improper BIOS modification can damage your system."""
             second_offsets = find_pattern_matches(bios_data, second_pattern)
             for offset in second_offsets:
                 self.log_message(f"Pattern found at offset 0x{offset:X} and replaced.")
-                bios_data[offset:offset+6] = second_replace_bytes + bytes([0] * (6 - len(second_replace_bytes)))
+                bios_data[offset:offset+6] = second_replace_bytes + bytes(
+                    [0] * (6 - len(second_replace_bytes))
+                )
 
             if first_offsets or second_offsets:
-                patched_file_path = os.path.join(os.path.dirname(file_path), f"patched_{file_name}")
-                with open(patched_file_path, "wb") as f: f.write(bios_data)
+                patched_file_path = os.path.join(
+                    os.path.dirname(file_path), f"patched_{file_name}"
+                )
+                with open(patched_file_path, "wb") as f:
+                    f.write(bios_data)
                 self.log_message(f"Patched and saved as patched_{file_name}")
                 self.patch_button.config(text="Completed!", state=tk.DISABLED)
-                messagebox.showinfo("Success", f"BIOS patched successfully!\nSaved as {patched_file_path}")
-                self.log_message("Use your BIOS Programmer to flash the patched bin file to your device.")
-                self.log_message("Reboot the device.. A warning will come up: 'The Service Tag has not been programmed...'.")
-                self.log_message("After inputting the Service Tag, the device will reboot again and you should be able to boot to the Windows OS.")
-                self.log_message("For other BIOS password needs, use the Password Generator tab.")
+                messagebox.showinfo(
+                    "Success", f"BIOS patched successfully!\nSaved as {patched_file_path}"
+                )
+                self.log_message(
+                    "Use your BIOS Programmer to flash the patched bin file to your device."
+                )
+                self.log_message(
+                    "Reboot the device.. A warning will come up: "
+                    "'The Service Tag has not been programmed...'."
+                )
+                self.log_message(
+                    "After inputting the Service Tag, the device will reboot again and you "
+                    "should be able to boot to the Windows OS."
+                )
+                self.log_message(
+                    "For other BIOS password needs, use the Password Generator tab."
+                )
             else:
                 self.log_message("Patching failed: No patterns found")
-                messagebox.showwarning("Warning", "No matching patterns found. Patch unsuccessful.")
+                messagebox.showwarning(
+                    "Warning", "No matching patterns found. Patch unsuccessful."
+                )
         except Exception as e:
             self.log_message(f"Error during patching: {e}")
             messagebox.showerror("Error", f"An error occurred: {e}")
@@ -923,7 +981,12 @@ class PasswordGeneratorTab:
         frame = tk.Frame(self.frame, padx=10, pady=10); frame.pack(expand=True)
 
         tk.Label(frame, text="Dell BIOS Password Generator", font=("Arial", 12, "bold")).pack(pady=10)
-        tk.Label(frame, text="Enter 7-character Service Tag followed by 4-character Tag suffix\n(Example: 1A2B3C4595B)", justify=tk.CENTER).pack(pady=5)
+        tk.Label(
+            frame,
+            text="Enter 7-character Service Tag followed by 4-character Tag suffix\n"
+                 "(Example: 1A2B3C4595B)",
+            justify=tk.CENTER
+        ).pack(pady=5)
 
         input_frame = tk.Frame(frame); input_frame.pack(pady=10)
         tk.Label(input_frame, text="Service Tag + Suffix:").pack(side=tk.LEFT)
@@ -931,13 +994,21 @@ class PasswordGeneratorTab:
 
         tags_frame = tk.Frame(frame); tags_frame.pack(pady=5)
         tk.Label(tags_frame, text="Common Tags:").pack(side=tk.LEFT)
-        tk.Label(tags_frame, text="595B, D35B, 2A7B, 1D3B, 1F66, 6FF1, 1F5A, BF97, E7A8", fg="blue").pack(side=tk.LEFT, padx=5)
+        tk.Label(
+            tags_frame,
+            text="595B, D35B, 2A7B, 1D3B, 1F66, 6FF1, 1F5A, BF97, E7A8",
+            fg="blue"
+        ).pack(side=tk.LEFT, padx=5)
 
-        tk.Button(frame, text="Compute Password", command=self.compute_password, bg="#4682B4", fg="white").pack(pady=10)
+        tk.Button(
+            frame, text="Compute Password", command=self.compute_password,
+            bg="#4682B4", fg="white"
+        ).pack(pady=10)
 
         result_frame = tk.Frame(frame); result_frame.pack(pady=10, fill=tk.X)
         tk.Label(result_frame, text="Password:").pack(side=tk.LEFT)
-        self.result_display = tk.Entry(result_frame, width=30, state="readonly"); self.result_display.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        self.result_display = tk.Entry(result_frame, width=30, state="readonly")
+        self.result_display.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         note_text = "Note: For 8FC8 suffixes, use the 'BIOS Unlocker' tool instead."
         tk.Label(frame, text=note_text, fg="red", font=("Arial", 9)).pack(pady=5)
@@ -956,9 +1027,13 @@ Warning: Use at your own risk. Incorrect BIOS passwords can lock your system."""
         self.result_display.config(state=tk.NORMAL); self.result_display.delete(0, tk.END)
         if dellSolverValidator(text):
             results = dellSolverFun(text)
-            self.result_display.insert(0, ", ".join(results) if results else "No valid password found for this input.")
+            self.result_display.insert(
+                0, ", ".join(results) if results else "No valid password found for this input."
+            )
         else:
-            self.result_display.insert(0, "Invalid input format. Use 7-char tag + 4-char suffix.")
+            self.result_display.insert(
+                0, "Invalid input format. Use 7-char tag + 4-char suffix."
+            )
         self.result_display.config(state="readonly")
 
 class ServiceTagExtractorTab:
@@ -968,17 +1043,27 @@ class ServiceTagExtractorTab:
 
         tk.Label(self.frame, text="Select BIOS File (.bin):", font=("Arial", 10, "bold")).pack(pady=5)
         file_frame = tk.Frame(self.frame); file_frame.pack(pady=5)
-        self.entry = tk.Entry(file_frame, width=50, borderwidth=0, font=("Arial", 9)); self.entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(file_frame, text="Browse", command=self.browse_file, bg="#4682B4", fg="white").pack(side=tk.RIGHT, padx=5)
+        self.entry = tk.Entry(file_frame, width=50, borderwidth=0, font=("Arial", 9))
+        self.entry.pack(side=tk.LEFT, padx=5)
+        tk.Button(file_frame, text="Browse", command=self.browse_file, bg="#4682B4", fg="white")\
+            .pack(side=tk.RIGHT, padx=5)
 
-        self.scan_button = tk.Button(self.frame, text="Extract Tags", command=self.extract_tags,
-                                     bg="white", fg="black", font=("Arial", 10, "bold"),
-                                     padx=10, state=tk.DISABLED, borderwidth=1, relief="solid")
+        self.scan_button = tk.Button(
+            self.frame, text="Extract Tags", command=self.extract_tags,
+            bg="white", fg="black", font=("Arial", 10, "bold"),
+            padx=10, state=tk.DISABLED, borderwidth=1, relief="solid"
+        )
         self.scan_button.pack(pady=10)
 
-        log_frame = tk.Frame(self.frame, bg="#36454F"); log_frame.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
-        tk.Label(log_frame, text="Extractor Log:", bg="#36454F", fg="white", anchor="w").pack(fill=tk.X)
-        self.log_text = scrolledtext.ScrolledText(log_frame, height=18, state=tk.DISABLED, bg="black", fg="#00FF00", font=("Consolas", 9))
+        log_frame = tk.Frame(self.frame, bg="#36454F"); log_frame.pack(
+            pady=5, padx=10, fill=tk.BOTH, expand=True
+        )
+        tk.Label(log_frame, text="Extractor Log:", bg="#36454F", fg="white", anchor="w")\
+            .pack(fill=tk.X)
+        self.log_text = scrolledtext.ScrolledText(
+            log_frame, height=18, state=tk.DISABLED,
+            bg="black", fg="#00FF00", font=("Consolas", 9)
+        )
         self.log_text.pack(fill=tk.BOTH, expand=True)
 
         self.log_message("Ready to extract Service Tags from BIOS dump")
@@ -988,43 +1073,58 @@ class ServiceTagExtractorTab:
         self.log_text.see(tk.END); self.log_text.config(state=tk.DISABLED); self.parent.update()
 
     def browse_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("BIOS Files", "*.bin *.rom *.fd *.bio"),("All Files", "*.*")])
+        file_path = filedialog.askopenfilename(
+            filetypes=[("BIOS Files", "*.bin *.rom *.fd *.bio"),("All Files", "*.*")]
+        )
         if file_path:
             self.entry.delete(0, tk.END); self.entry.insert(0, file_path)
-            self.log_message(f"Selected file: {file_path}"); self.scan_button.config(text="Extract Tags", state=tk.NORMAL)
+            self.log_message(f"Selected file: {file_path}")
+            self.scan_button.config(text="Extract Tags", state=tk.NORMAL)
 
     def extract_tags(self):
         file_path = self.entry.get()
         if not file_path or not os.path.exists(file_path):
-            messagebox.showerror("Error", "Please select a valid BIOS file!"); return
+            messagebox.showerror("Error", "Please select a valid BIOS file!")
+            return
         try:
-            with open(file_path, 'rb') as f: data = f.read()
+            with open(file_path, 'rb') as f:
+                data = f.read()
             tags = defaultdict(list)
             for i in range(len(data) - 16):
                 chunk = data[i:i+14]; terminator = data[i+14:i+16]
                 if self.is_ascii_upper_alnum_utf16le(chunk) and terminator == b'\x00\x00':
                     try:
                         tag = chunk.decode('utf-16le'); tags[tag].append(i)
-                    except: continue
+                    except:
+                        continue
             if not tags:
-                self.log_message("❌ No valid tags found."); return
+                self.log_message("❌ No valid tags found.")
+                return
             self.log_message("=== Service Tag Occurrence Summary ===")
             sorted_tags = sorted(tags.items(), key=lambda x: -len(x[1]))
             for tag, offsets in sorted_tags:
-                self.log_message(f"Tag: {tag} | Found: {len(offsets)} times | Example Offset: 0x{offsets[0]:08X}")
+                self.log_message(
+                    f"Tag: {tag} | Found: {len(offsets)} times | "
+                    f"Example Offset: 0x{offsets[0]:08X}"
+                )
             most_common = sorted_tags[0]
             self.log_message(f"\n✅ Most Likely Service Tag: {most_common[0]}")
             self.log_message(f"   Occurrences: {len(most_common[1])}")
-            self.log_message(f"   Region Range: 0x{min(most_common[1]):08X} – 0x{max(most_common[1]):08X}")
+            self.log_message(
+                f"   Region Range: 0x{min(most_common[1]):08X} – 0x{max(most_common[1]):08X}"
+            )
         except Exception as e:
             self.log_message(f"[ERROR] {e}")
 
     def is_ascii_upper_alnum_utf16le(self, data):
-        if len(data) != 14: return False
+        if len(data) != 14:
+            return False
         for i in range(0, 14, 2):
             char = data[i]
-            if not (48 <= char <= 57 or 65 <= char <= 90): return False
-            if data[i+1] != 0x00: return False
+            if not (48 <= char <= 57 or 65 <= char <= 90):
+                return False
+            if data[i+1] != 0x00:
+                return False
         return True
 
 class AssetManagerTab:
@@ -1052,7 +1152,8 @@ class AssetManagerTab:
 
         # Optional setup password
         pwd_row = tk.Frame(wrap); pwd_row.pack(fill=tk.X, pady=(0,6))
-        tk.Label(pwd_row, text="Setup Password (optional):", width=22, anchor="w").pack(side=tk.LEFT)
+        tk.Label(pwd_row, text="Setup Password (optional):", width=22, anchor="w")\
+            .pack(side=tk.LEFT)
         self.pwd_entry = tk.Entry(pwd_row, width=32, show="*"); self.pwd_entry.pack(side=tk.LEFT, padx=6)
 
         # Buttons
@@ -1106,12 +1207,25 @@ class AssetManagerTab:
     def update_asset(self):
         """
         Set via CCTK. Auto-detect CCTK when needed.
+
+        If New Asset Tag is left blank, we treat that as a request to CLEAR
+        the Asset Tag (set it to empty), after a confirmation dialog.
         """
-        new_tag = self.new_entry.get().strip()
+        new_tag_raw = self.new_entry.get()
+        new_tag = (new_tag_raw or "").strip()
         setup_pwd = self.pwd_entry.get().strip() or None
-        if not new_tag:
-            messagebox.showwarning("Missing value", "Enter the new Asset Tag.")
-            return
+
+        # If the user left it empty, ask if they want to clear it.
+        if new_tag == "":
+            if not messagebox.askyesno(
+                "Clear Asset Tag",
+                "New Asset Tag is blank.\n\n"
+                "This will attempt to CLEAR the Asset Tag in BIOS "
+                "(set it to empty).\n\n"
+                "Do you want to continue?"
+            ):
+                return
+
         try:
             self._ensure_cctk()
         except Exception as e:
@@ -1123,15 +1237,24 @@ class AssetManagerTab:
             return
 
         try:
+            # For blank, this passes --asset= which on many Dell systems clears the tag.
             set_asset_tag(self.cctk_path, new_tag, setup_pwd)
-            self.current_var.set(new_tag)
-            log(f"Updated Asset Tag → {new_tag}")
-            messagebox.showinfo("Success", f"Asset Tag updated to: {new_tag}")
+
+            if new_tag:
+                self.current_var.set(new_tag)
+                log(f"Updated Asset Tag → {new_tag}")
+                messagebox.showinfo("Success", f"Asset Tag updated to: {new_tag}")
+            else:
+                self.current_var.set("(empty)")
+                log("Cleared Asset Tag (set to empty)")
+                messagebox.showinfo("Success", "Asset Tag cleared (set to empty).")
         except Exception as e:
             messagebox.showerror("CCTK Error", str(e))
 
     def reboot_bios(self):
-        if messagebox.askyesno("Restart to BIOS", "Restart now to BIOS setup to verify the tag?"):
+        if messagebox.askyesno(
+            "Restart to BIOS", "Restart now to BIOS setup to verify the tag?"
+        ):
             fast_restart_to_bios()
 
 ################################################################################
@@ -1145,7 +1268,9 @@ class DellToolsApp:
         self.root.geometry("700x620")
         self.root.configure(bg="#36454F")
 
-        self.notebook = ttk.Notebook(root); self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.notebook = ttk.Notebook(root); self.notebook.pack(
+            fill=tk.BOTH, expand=True, padx=5, pady=5
+        )
         self.unlocker_tab = BiosUnlockerTab(self.notebook)
         self.password_tab = PasswordGeneratorTab(self.notebook)
         self.service_tag_tab = ServiceTagExtractorTab(self.notebook)
@@ -1174,7 +1299,10 @@ if __name__ == "__main__":
             f.write(traceback.format_exc())
         try:
             tmp = tk.Tk(); tmp.withdraw()
-            messagebox.showerror("Fatal Error", "A critical error occurred. Details saved to error_log.txt")
+            messagebox.showerror(
+                "Fatal Error",
+                "A critical error occurred. Details saved to error_log.txt"
+            )
             tmp.destroy()
         except Exception:
             pass
