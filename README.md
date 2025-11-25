@@ -100,14 +100,17 @@ This tool combines four essential utilities for Dell BIOS management:
      - Load your Dell .bin file
      - Click "Extract Tags" (may take some time)
 
-4. Asset Manager (NEW in V2.5)
-   - View and update Dell Asset Tag values directly
+4. Asset Manager (UPDATED in V2.5)
+   - View, update, or clear Dell Asset Tag values directly
    - Useful for IT inventory, service tracking, and post-repair validation
    - Steps:
      - Open the Asset Manager tab
-     - View the current Asset Tag stored in the BIOS
-     - Enter a new Asset Tag (if needed) and click "Update"
-     - Reboot to apply changes
+     - The current Asset Tag is displayed automatically
+     - Enter a new Asset Tag OR leave blank to clear it
+     - Click "Update" to apply the change
+     - Reboot to BIOS verify the updated Asset Tag
+
+
 
 ------------------------------------------------------------
 ⚠️ Disclaimer
