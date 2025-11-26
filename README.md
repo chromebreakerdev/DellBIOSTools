@@ -138,3 +138,11 @@ Credits
 - Original Bios Unlocker tool by Rex98 & Techshack Cebu
 - Research by Dogbert and Asyncritus
 - Python scripts courtesy of chromebreakerdev
+---
+
+### ☕ Support My Work  
+If this tool has helped you, you can support future development here:
+
+👉 https://www.buymeacoffee.com/chromebreakerdev
+
+Thank you for your support!
