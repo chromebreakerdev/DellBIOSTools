@@ -83,7 +83,7 @@ This tool combines several essential utilities for Dell BIOS management:
 
 2. Password Generator
    - Generates Dell master passwords from service tags
-   - Supports multiple tag types (595B, D35B, 2A7B, 1D3B, 1F66, E7A8, 8FC8, etc.)
+   - Supports multiple tag types (595B, D35B, 2A7B, 1D3B, 1F66, E7A8, etc.)
    - Steps:
      - Enter your 7-character Service Tag plus the 4-character suffix
      - Click "Compute Password"
