@@ -1,8 +1,6 @@
-DellBIOSTools V2.5
-
+# DellBIOSTools V2.5
 
 https://github.com/user-attachments/assets/73d3720e-0390-4011-ae4d-b0e051ed31b1
-
 
 ==================
 Requirements
@@ -10,17 +8,14 @@ Requirements
 - Python 3.11 or greater is required to run the raw Python code (DellBiosTools.pyw)
 - Windows 10/11 recommended for EXE build and usage
 
+==================
 Preview
+
 
 ------------------------------------------------------------
 🚀 Quick Build (Recommended)
 
-
 To create a standalone EXE without worrying about Python setup:
-
-
-
-
 
 1. Download this repo as ZIP and extract it.
 2. Double-click:
@@ -75,7 +70,7 @@ If you prefer to build manually:
 ------------------------------------------------------------
 🛠 Usage
 
-This tool combines four essential utilities for Dell BIOS management:
+This tool combines several essential utilities for Dell BIOS management:
 
 1. Dell (8FC8 Patcher)
    - Unlocks Dell BIOS by patching specific 8FC8 suffix patterns
@@ -88,7 +83,7 @@ This tool combines four essential utilities for Dell BIOS management:
 
 2. Password Generator
    - Generates Dell master passwords from service tags
-   - Supports multiple tag types (595B, D35B, 2A7B, 1D3B, 1F66, etc.)
+   - Supports multiple tag types (595B, D35B, 2A7B, 1D3B, 1F66, E7A8, 8FC8, etc.)
    - Steps:
      - Enter your 7-character Service Tag plus the 4-character suffix
      - Click "Compute Password"
@@ -108,9 +103,21 @@ This tool combines four essential utilities for Dell BIOS management:
      - The current Asset Tag is displayed automatically
      - Enter a new Asset Tag OR leave blank to clear it
      - Click "Update" to apply the change
-     - Reboot to BIOS verify the updated Asset Tag
+     - Reboot to verify the updated Asset Tag
 
+5. Dell PFS BIOS Extractor (NEW in V2.5)
+   - Extracts official Dell BIOS Update Packages (.EXE and .RCV)
+   - Automatically creates an output folder next to the BIOS file:
 
+         <same_directory>\<filename>_EXTRACTED\
+
+   - Automatically opens the extracted folder in Windows Explorer
+   - Requires no user selection of the output folder
+   - Provides full logging of the extraction process
+   - Powered by Dell PFS Update Extractor technology
+
+   Credit:
+   This feature is powered by the Dell PFS Update Extractor by Plato Mavropoulos.
 
 ------------------------------------------------------------
 ⚠️ Disclaimer
@@ -135,14 +142,16 @@ MIT — free to use, share, and modify
 ------------------------------------------------------------
 Credits
 
-- Original Bios Unlocker tool by Rex98 & Techshack Cebu
+- Original BIOS Unlocker tool by Rex98 & Techshack Cebu
 - Research by Dogbert and Asyncritus
+- Dell PFS Update Extractor by Plato Mavropoulos
 - Python scripts courtesy of chromebreakerdev
----
 
-### ☕ Support My Work  
+------------------------------------------------------------
+☕ Support My Work
+
 If this tool has helped you, you can support future development here:
 
-👉 https://www.buymeacoffee.com/chromebreakerdev
+https://www.buymeacoffee.com/chromebreakerdev
 
 Thank you for your support!
