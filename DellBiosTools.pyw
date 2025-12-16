@@ -1131,80 +1131,94 @@ Use with caution: Improper BIOS modification can damage your system."""
         self.log_text.configure(state=tk.DISABLED)
 
     def patch_bios(self):
-        bios_path = self.entry.get().strip()
-        if not bios_path:
-            messagebox.showerror("Error", "Please select a BIOS file first.")
+        file_path = self.entry.get()
+        if not file_path or not os.path.exists(file_path):
+            messagebox.showerror("Error", "Please select a valid BIOS file first!")
             return
 
-        self.clear_log()
-        self.log_message(f"[+] Selected BIOS: {bios_path}")
+        self.log_message("Starting BIOS patching process...")
 
         try:
-            with open(bios_path, "rb") as f:
-                bios_data = f.read()
+            with open(file_path, "rb") as f:
+                bios_data = bytearray(f.read())
+
+            file_name = os.path.basename(file_path)
+            file_size = len(bios_data)
+            self.log_message(f"Loaded BIOS file: {file_name} (Size: {file_size} bytes)")
+
+            # Intel signature check (same as old working unlocker)
+            intel_signature = convert_hex_to_bytes("5AA5F00F03")
+            self.log_message("Searching for Intel signature...")
+            intel_offset = find_intel_signature(bios_data, intel_signature)
+            if intel_offset >= 0:
+                self.log_message(f"Intel signature found at offset 0x{intel_offset:X}")
+            else:
+                self.log_message("Intel signature not found")
+                messagebox.showerror(
+                    "Error",
+                    "Intel signature not found. This may not be a valid BIOS file."
+                )
+                return
+
+            # Pattern 1
+            self.log_message("Checking for first pattern...")
+            first_pattern = r"^00FCAA[0-9A-F]{2,4}000000[0-9A-F]{2,}.*$"
+            first_replace_bytes = convert_hex_to_bytes("00FC00")
+            first_offsets = find_pattern_matches(bios_data, first_pattern)
+            for offset in first_offsets:
+                self.log_message(f"Pattern found at offset 0x{offset:X} and replaced.")
+                bios_data[offset:offset+6] = first_replace_bytes + bytes(
+                    [0] * (6 - len(first_replace_bytes))
+                )
+
+            # Pattern 2
+            self.log_message("Almost done! Checking second pattern...")
+            second_pattern = r"^00FDAA[0-9A-F]{2,4}000000[0-9A-F]{2,}.*$"
+            second_replace_bytes = convert_hex_to_bytes("00FD00")
+            second_offsets = find_pattern_matches(bios_data, second_pattern)
+            for offset in second_offsets:
+                self.log_message(f"Pattern found at offset 0x{offset:X} and replaced.")
+                bios_data[offset:offset+6] = second_replace_bytes + bytes(
+                    [0] * (6 - len(second_replace_bytes))
+                )
+
+            if first_offsets or second_offsets:
+                patched_file_path = os.path.join(
+                    os.path.dirname(file_path), f"patched_{file_name}"
+                )
+                with open(patched_file_path, "wb") as f:
+                    f.write(bios_data)
+
+                self.log_message(f"Patched and saved as patched_{file_name}")
+                self.patch_button.config(text="Completed!", state=tk.DISABLED)
+
+                messagebox.showinfo(
+                    "Success", f"BIOS patched successfully!\nSaved as {patched_file_path}"
+                )
+
+                self.log_message(
+                    "Use your BIOS Programmer to flash the patched bin file to your device."
+                )
+                self.log_message(
+                    "Reboot the device.. A warning will come up: "
+                    "'The Service Tag has not been programmed...'."
+                )
+                self.log_message(
+                    "After inputting the Service Tag, the device will reboot again and you "
+                    "should be able to boot to the Windows OS."
+                )
+                self.log_message(
+                    "For other BIOS password needs, use the Password Generator tab."
+                )
+            else:
+                self.log_message("Patching failed: No patterns found")
+                messagebox.showwarning(
+                    "Warning", "No matching patterns found. Patch unsuccessful."
+                )
+
         except Exception as e:
-            self.log_message(f"[!] Failed to read BIOS file: {e}")
-            messagebox.showerror("Error", f"Failed to read BIOS file:\n{e}")
-            return
-
-        self.log_message("[+] Searching for Intel RSA signature pattern and password check sequences...")
-
-        intel_signature_hex = "4A 4D 50 00"
-        intel_signature_bytes = convert_hex_to_bytes(intel_signature_hex.replace(" ", ""))
-        pattern_regex = r"^C74424.{8}85C0$"
-
-        intel_signature_offset = find_intel_signature(bios_data, intel_signature_bytes)
-        if intel_signature_offset == -1:
-            self.log_message("[!] Intel signature not found within the first 0x1000 bytes.")
-        else:
-            self.log_message(f"[+] Intel signature found at offset: 0x{intel_signature_offset:08X}")
-
-        matches = find_pattern_matches(bios_data, pattern_regex)
-        if matches:
-            self.log_message("[+] Found potential password check patterns at the following offsets:")
-            for offset in matches:
-                self.log_message(f"    - Offset 0x{offset:08X}")
-        else:
-            self.log_message("[!] No password check patterns found in the analyzed range.")
-
-        patched_data = bytearray(bios_data)
-        if matches:
-            for offset in matches:
-                self.log_message(f"[+] Patching password check at offset 0x{offset:08X}")
-                patched_data[offset] = 0x31  # XOR byte of EAX,EBX (placeholder patch)
-        else:
-            self.log_message("[!] No patches applied since no password check patterns were found.")
-            messagebox.showwarning("No Patches Applied", "No password check patterns were found in the BIOS file.")
-            return
-
-        try:
-            bios_dir, bios_filename = os.path.split(bios_path)
-            patched_file_path = os.path.join(bios_dir, f"patched_{bios_filename}")
-            with open(patched_file_path, "wb") as f:
-                f.write(patched_data)
-            self.log_message(f"[+] Patched BIOS saved as: {patched_file_path}")
-
-            messagebox.showinfo(
-                "Success", f"BIOS patched successfully!\nSaved as {patched_file_path}"
-            )
-            self.log_message(
-                "Use your BIOS Programmer to flash the patched bin file to your device."
-            )
-            self.log_message(
-                "Reboot the device.. A warning will come up: "
-                "'The Service Tag has not been programmed...'."
-            )
-            self.log_message(
-                "After inputting the Service Tag, the device will reboot again and you "
-                "should be able to boot to the Windows OS."
-            )
-            self.log_message(
-                "For other BIOS password needs, use the Password Generator tab."
-            )
-        except Exception as e:
-            self.log_message(f"[!] Failed to save patched BIOS: {e}")
-            messagebox.showerror("Error", f"Failed to save patched BIOS:\n{e}")
-
+            self.log_message(f"Error during patching: {e}")
+            messagebox.showerror("Error", f"An error occurred: {e}")
 class PasswordGeneratorTab:
     def __init__(self, parent):
         self.parent = parent
