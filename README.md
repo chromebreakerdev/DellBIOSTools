@@ -120,6 +120,19 @@ This tool combines several essential utilities for Dell BIOS management:
    This feature is powered by the Dell PFS Update Extractor by Plato Mavropoulos.
 
 ------------------------------------------------------------
+
+
+![POGO](https://github.com/user-attachments/assets/cfdbb656-f59b-4249-b726-4d64e6c5d024)
+
+In-Circuit Flashing Notes
+
+In-circuit flashing using a pogo-pin adapter (for example, with a T48 programmer) may be used
+to attempt reading or programming the BIOS while the SPI chip remains installed on the board.
+Outcomes can vary based on board layout, power conditions, and attached components.
+When a stable or consistent read cannot be achieved, removal of the SPI chip from the board
+may be necessary in order to perform external programming.
+
+
 ⚠️ Disclaimer
 
 This tool is provided as-is with no warranty of any kind.
@@ -142,7 +155,8 @@ MIT — free to use, share, and modify
 ------------------------------------------------------------
 Credits
 
-- Original BIOS Unlocker tool by Rex98 & Techshack Cebu
+- Original BIOS Unlocker tool by Rex98 & Tech
+shack Cebu
 - Research by Dogbert and Asyncritus
 - Dell PFS Update Extractor by Plato Mavropoulos
 - Python scripts courtesy of chromebreakerdev
