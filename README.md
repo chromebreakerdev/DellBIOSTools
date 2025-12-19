@@ -121,10 +121,10 @@ This tool combines several essential utilities for Dell BIOS management:
 
 ------------------------------------------------------------
 
+IN-CIRCUIT FLASHING NOTES:
 
 ![POGO](https://github.com/user-attachments/assets/cfdbb656-f59b-4249-b726-4d64e6c5d024)
 
-In-Circuit Flashing Notes
 
 In-circuit flashing using a pogo-pin adapter (for example, with a T48 programmer) may be used
 to attempt reading or programming the BIOS while the SPI chip remains installed on the board.
