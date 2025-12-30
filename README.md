@@ -106,6 +106,9 @@ This tool combines several essential utilities for Dell BIOS management:
      - Reboot to verify the updated Asset Tag
 
 5. Dell PFS BIOS Extractor (NEW in V2.5)
+   - NOTE: OUTPUT FROM THIS FUNCTION IS NOT TO BE USED IN PLACE OF A VALID BIOS DUMP .BIN FILE FROM YOUR DEVICE.
+   - ONLY USE THE ORIGINAL BIOS DUMP .BIN FILE WHICH YOU SHOULD HAVE PULLED FROM THE DEVICE. MAKE A COPY OF THIS BIN FILE FOR SAFE KEEPING
+   - THEN USE THE COPY TO PATCH AND UPDATE THE DEVICE.  
    - Extracts official Dell BIOS Update Packages (.EXE and .RCV)
    - Automatically creates an output folder next to the BIOS file:
 
