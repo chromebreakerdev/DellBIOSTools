@@ -13,7 +13,32 @@ from collections import defaultdict
 from typing import List, Dict, Optional
 from datetime import datetime
 
-from PIL import Image, ImageTk   # ← THIS LINE
+# -------------------------------------------------
+# Pillow (safe for PyInstaller EXE)
+# -------------------------------------------------
+try:
+    from PIL import Image, ImageTk
+except ImportError:
+    Image = None
+    ImageTk = None
+
+# -------------------------------------------------
+# PyInstaller-safe resource loader
+# -------------------------------------------------
+def resource_path(relative_path):
+    """
+    Get absolute path to resource.
+    Works for:
+      - normal .py/.pyw execution
+      - PyInstaller-built EXE
+    """
+    try:
+        base_path = sys._MEIPASS  # PyInstaller temp folder
+    except AttributeError:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+
+    return os.path.join(base_path, relative_path)
+
 
 
 # =============================================================================
@@ -1731,7 +1756,7 @@ def main():
         font=("Segoe UI", 9)
     ).pack(pady=(8, 4))
 
-    app.logo = FadeLogo(banner, os.path.join(BASE_DIR, 'icon', 'DellBiosTools.ico'), size=48)
+    app.logo = FadeLogo(banner, resource_path(os.path.join('icon', 'DellBiosTools.ico')), size=48)
     root.mainloop()
 
 if __name__ == "__main__":

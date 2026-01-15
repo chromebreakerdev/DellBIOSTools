@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 
 rem =============================================================================
-rem  DellBiosTools - Build EXE (local, flat output, PFS-safe)
+rem  DellBiosTools - Build EXE (flat output, EXE-safe)
 rem =============================================================================
 
 rem --- Safety: don't run from System32 ---
@@ -17,7 +17,7 @@ if /I "%CD%"=="C:\Windows\System32" (
 set ENTRY=DellBiosTools.pyw
 set BUILDTMP=build_tmp
 
-rem --- Ensure PyInstaller is available (UNCHANGED BEHAVIOR) ---
+echo.
 echo [*] Ensuring PyInstaller is available...
 python -m pip install --upgrade pip pyinstaller
 if errorlevel 1 (
@@ -45,6 +45,7 @@ python -m PyInstaller ^
   --hidden-import=PIL ^
   --hidden-import=PIL.Image ^
   --hidden-import=PIL.ImageTk ^
+  --add-data "%CD%\icon;icon" ^
   --icon "%CD%\icon\DellBiosTools.ico" ^
   "%ENTRY%"
 
