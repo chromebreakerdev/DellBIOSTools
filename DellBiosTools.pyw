@@ -13,6 +13,9 @@ from collections import defaultdict
 from typing import List, Dict, Optional
 from datetime import datetime
 
+from PIL import Image, ImageTk   # ← THIS LINE
+
+
 # =============================================================================
 # VENDOR PATH & SHIM FOR biosutilities (needed for EXE builds)
 # =============================================================================
@@ -1100,7 +1103,6 @@ class BiosUnlockerTab:
         about_text = """ English Version of the Rex98-8FC8-Patcher
 Based on the original tool by Rex98 & Techshack Cebu
 Use with caution: Improper BIOS modification can damage your system."""
-        tk.Label(self.frame, text=about_text, fg="#CCCCCC", font=("Arial", 8), justify=tk.LEFT).pack(pady=(5, 0))
 
         self.log_text.configure(state=tk.NORMAL)
         self.log_text.insert(tk.END, "Welcome to Dell-8FC8-BIOS-UNLOCKER\n")
@@ -1666,10 +1668,70 @@ class DellToolsApp:
         self.notebook.add(self.service_tag_tab.frame, text="Service Tag Extractor")
         self.notebook.add(self.asset_tab.frame, text="Asset Manager")
 
+
+class FadeLogo:
+    def __init__(self, parent, image_path, size=48, step=3, interval=80):
+        self.parent = parent
+        self.alpha = 255
+        self.direction = -1
+        self.step = step
+        self.interval = interval
+
+        self.canvas = tk.Canvas(parent, width=size, height=size, highlightthickness=0, bd=0)
+        self.canvas.pack(side="bottom", pady=6)
+
+        img = Image.open(image_path).convert("RGBA")
+        img = img.resize((size, size), Image.LANCZOS)
+        self.base = img
+
+        self.tk_img = ImageTk.PhotoImage(self.base)
+        self.img_id = self.canvas.create_image(size // 2, size // 2, image=self.tk_img)
+
+        # start fade automatically
+        self._animate()
+
+    def _animate(self):
+        try:
+            frame = self.base.copy()
+            frame.putalpha(self.alpha)
+            self.tk_img = ImageTk.PhotoImage(frame)
+            self.canvas.itemconfigure(self.img_id, image=self.tk_img)
+
+            self.alpha += self.direction * self.step
+            if self.alpha <= 90 or self.alpha >= 255:
+                self.direction *= -1
+        except Exception:
+            return
+
+        self.parent.after(self.interval, self._animate)
+
 def main():
     ensure_admin_windows()
     root = tk.Tk()
     app = DellToolsApp(root)
+    # Create static logo (safe)
+    # -------------------------------------------------
+    # Bottom banner (text + fading logo together)
+    # -------------------------------------------------
+    banner = tk.Frame(root, bg="#36454F")
+    banner.pack(side="bottom", fill="x")
+
+    info_text = (
+        "English Version of the Rex98 8FC8 Patcher\n"
+        "Based on the original tool by Rex98 & Techsachk Cebu\n"
+        "Use with caution: Improper BIOS modification can damage your system."
+    )
+
+    tk.Label(
+        banner,
+        text=info_text,
+        fg="#D0D0D0",
+        bg="#36454F",
+        justify="center",
+        font=("Segoe UI", 9)
+    ).pack(pady=(8, 4))
+
+    app.logo = FadeLogo(banner, os.path.join(BASE_DIR, 'icon', 'DellBiosTools.ico'), size=48)
     root.mainloop()
 
 if __name__ == "__main__":
