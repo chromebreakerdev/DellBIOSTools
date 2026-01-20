@@ -82,9 +82,21 @@ This tool combines several essential utilities for Dell BIOS management:
 - Useful for IT inventory and post-repair validation
 
 ### 4. Dell PFS BIOS Extractor (NEW in V2.5)
-- Extracts official Dell BIOS update packages (.EXE / .RCV)
-- Automatically creates an output folder next to the BIOS file
-- Powered by Dell PFS Update Extractor by Plato Mavropoulos
+   - NOTE: OUTPUT FROM THIS FUNCTION IS NOT TO BE USED IN PLACE OF A VALID BIOS DUMP .BIN FILE FROM YOUR DEVICE.
+   - ONLY USE THE ORIGINAL BIOS DUMP .BIN FILE WHICH YOU SHOULD HAVE PULLED FROM THE DEVICE. MAKE A COPY OF THIS BIN FILE FOR SAFE KEEPING
+   - THEN USE THE COPY TO PATCH AND UPDATE THE DEVICE.  
+   - Extracts official Dell BIOS Update Packages (.EXE and .RCV)
+   - Automatically creates an output folder next to the BIOS file:
+
+         <same_directory>\<filename>_EXTRACTED\
+
+   - Automatically opens the extracted folder in Windows Explorer
+   - Requires no user selection of the output folder
+   - Provides full logging of the extraction process
+   - Powered by Dell PFS Update Extractor technology
+
+   Credit:
+   This feature is powered by the Dell PFS Update Extractor by Plato Mavropoulos.
 
 ------------------------------------------------------------
 ## IN-CIRCUIT FLASHING NOTES
