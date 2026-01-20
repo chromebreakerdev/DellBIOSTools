@@ -3,17 +3,16 @@
 https://github.com/user-attachments/assets/73d3720e-0390-4011-ae4d-b0e051ed31b1
 
 ==================
-Requirements
+## Requirements
 ------------
-- Python 3.11 or greater is required to run the raw Python code (DellBiosTools.pyw)
+- Python 3.11 or greater is required to run the raw Python code (`DellBiosTools.pyw`)
 - Windows 10/11 recommended for EXE build and usage
 
 ==================
-Preview
-
+## Preview
 
 ------------------------------------------------------------
-🚀 Quick Build (Recommended)
+## 🚀 Quick Build (Recommended)
 
 To create a standalone EXE without worrying about Python setup:
 
@@ -26,7 +25,7 @@ To create a standalone EXE without worrying about Python setup:
    - Check if Python is installed
    - If missing, install it automatically
    - Upgrade pip and install PyInstaller
-   - Compile DellBiosTools.pyw into a standalone EXE
+   - Compile `DellBiosTools.pyw` into a standalone EXE
    - Embed the custom icon from the icon folder (if present)
    - Rename the EXE with a timestamp so Windows Explorer always shows the correct icon
    - Place the finished EXE in the project folder
@@ -38,9 +37,7 @@ When it finishes, you’ll see something like:
 in the same folder. ✅
 
 ------------------------------------------------------------
-🔧 Manual Build (Advanced)
-
-If you prefer to build manually:
+## 🔧 Manual Build (Advanced)
 
 1. Install Python 3.12+ from:
    https://www.python.org/downloads/windows/
@@ -50,125 +47,72 @@ If you prefer to build manually:
 
 3. Upgrade pip and install PyInstaller:
 
-   pip install --upgrade pip
-   pip install pyinstaller
+    pip install --upgrade pip
+    pip install pyinstaller
 
 4. Build the EXE:
 
-   pyinstaller --noconfirm --onefile --windowed --icon icon\DellBiosTools.ico DellBiosTools.pyw
+    pyinstaller --noconfirm --onefile --windowed --icon icon\DellBiosTools.ico DellBiosTools.pyw
 
 5. The EXE will appear at:
 
-   dist\DellBiosTools.exe
+    dist\DellBiosTools.exe
 
 6. (Optional) Clean up temporary build files:
 
-   rmdir /s /q build
-   rmdir /s /q dist
-   del DellBiosTools.spec
+    rmdir /s /q build
+    rmdir /s /q dist
+    del DellBiosTools.spec
 
 ------------------------------------------------------------
-🛠 Usage
+## 🛠 Usage
 
 This tool combines several essential utilities for Dell BIOS management:
 
-1. Dell (8FC8 Patcher)
-   - Unlocks Dell BIOS by patching specific 8FC8 suffix patterns
-   - Steps:
-     - Click "Browse" to select your BIOS file
-     - Click "Patch BIOS" to apply the patch
-     - Flash the patched BIOS and reboot
-     - When prompted that "The Service Tag has not been programmed", enter your Service Tag
-     - Reboot again, and the system should boot to Windows
+### 1. Dell BIOS Unlocker (8FC8 Patcher)
+- Unlocks Dell BIOS by patching specific 8FC8 suffix patterns
+- Select a BIOS file, patch it, flash it, and reboot
 
-2. Password Generator
-   - Generates Dell master passwords from service tags
-   - Supports multiple tag types (595B, D35B, 2A7B, 1D3B, 1F66, E7A8, etc.)
-   - Steps:
-     - Enter your 7-character Service Tag plus the 4-character suffix
-     - Click "Compute Password"
-     - Use the generated password to unlock your Dell system
+### 2. Password Generator
+- Generates Dell master passwords from Service Tags
+- Supports multiple Dell suffix types (595B, D35B, 2A7B, 1D3B, 1F66, E7A8, etc.)
 
-3. Service Tag Extractor
-   - Extracts Service Tag values from .bin BIOS files
-   - Steps:
-     - Load your Dell .bin file
-     - Click "Extract Tags" (may take some time)
+### 3. Asset Manager (UPDATED in V2.5)
+- View, update, or clear Dell Asset Tag values
+- Useful for IT inventory and post-repair validation
 
-4. Asset Manager (UPDATED in V2.5)
-   - View, update, or clear Dell Asset Tag values directly
-   - Useful for IT inventory, service tracking, and post-repair validation
-   - Steps:
-     - Open the Asset Manager tab
-     - The current Asset Tag is displayed automatically
-     - Enter a new Asset Tag OR leave blank to clear it
-     - Click "Update" to apply the change
-     - Reboot to verify the updated Asset Tag
-
-5. Dell PFS BIOS Extractor (NEW in V2.5)
-   - NOTE: OUTPUT FROM THIS FUNCTION IS NOT TO BE USED IN PLACE OF A VALID BIOS DUMP .BIN FILE FROM YOUR DEVICE.
-   - ONLY USE THE ORIGINAL BIOS DUMP .BIN FILE WHICH YOU SHOULD HAVE PULLED FROM THE DEVICE. MAKE A COPY OF THIS BIN FILE FOR SAFE KEEPING
-   - THEN USE THE COPY TO PATCH AND UPDATE THE DEVICE.  
-   - Extracts official Dell BIOS Update Packages (.EXE and .RCV)
-   - Automatically creates an output folder next to the BIOS file:
-
-         <same_directory>\<filename>_EXTRACTED\
-
-   - Automatically opens the extracted folder in Windows Explorer
-   - Requires no user selection of the output folder
-   - Provides full logging of the extraction process
-   - Powered by Dell PFS Update Extractor technology
-
-   Credit:
-   This feature is powered by the Dell PFS Update Extractor by Plato Mavropoulos.
+### 4. Dell PFS BIOS Extractor (NEW in V2.5)
+- Extracts official Dell BIOS update packages (.EXE / .RCV)
+- Automatically creates an output folder next to the BIOS file
+- Powered by Dell PFS Update Extractor by Plato Mavropoulos
 
 ------------------------------------------------------------
+## IN-CIRCUIT FLASHING NOTES
 
-IN-CIRCUIT FLASHING NOTES:
-
-![POGO](https://github.com/user-attachments/assets/cfdbb656-f59b-4249-b726-4d64e6c5d024)
-
-
-In-circuit flashing using a pogo-pin adapter (for example, with a T48 programmer) may be used
-to attempt reading or programming the BIOS while the SPI chip remains installed on the board.
-Outcomes can vary based on board layout, power conditions, and attached components.
-When a stable or consistent read cannot be achieved, removal of the SPI chip from the board
-may be necessary in order to perform external programming.
-
-
-⚠️ Disclaimer
-
-This tool is provided as-is with no warranty of any kind.
-Use at your own risk. The authors and contributors are not responsible
-for any data loss, corruption, hardware damage, or other issues that may occur
-from the use of this program.
-
-👉 Always back up your BIOS before patching and test in a safe environment.
-
-⚠️ Important Note: Building the EXE with PyInstaller may trigger antivirus
-false positives. This is a common issue with Python-packed executables.
-If flagged, add an exclusion for the folder or use the raw Python version
-(`DellBiosTools.pyw`) instead.
+In-circuit flashing using a pogo-pin adapter (such as with a T48 programmer) may be attempted.
+If a stable read cannot be achieved, removal of the SPI chip may be required.
 
 ------------------------------------------------------------
-📜 License
+## ⚠️ Disclaimer
+
+This tool is provided as-is with no warranty.
+Always back up your BIOS before patching.
+Use at your own risk.
+
+------------------------------------------------------------
+## 📜 License
 
 MIT — free to use, share, and modify
 
 ------------------------------------------------------------
-Credits
+## Credits
 
-- Original BIOS Unlocker tool by Rex98 & Tech
-shack Cebu
+- Original BIOS Unlocker tool by Rex98 & Techshack Cebu
 - Research by Dogbert and Asyncritus
 - Dell PFS Update Extractor by Plato Mavropoulos
-- Python scripts courtesy of chromebreakerdev
+- Python tooling by chromebreakerdev
 
 ------------------------------------------------------------
-☕ Support My Work
-
-If this tool has helped you, you can support future development here:
+## ☕ Support My Work
 
 https://www.buymeacoffee.com/chromebreakerdev
-
-Thank you for your support!
