@@ -1384,88 +1384,6 @@ class PasswordGeneratorTab:
             # E7A8 can return 2 passwords; show them side by side
             self._set_password_field("  /  ".join(results))
 
-class ServiceTagExtractorTab:
-    def __init__(self, parent):
-        self.parent = parent
-        self.frame = ttk.Frame(parent)
-
-        tk.Label(self.frame, text="Select BIOS/ROM File or Folder:", font=("Arial", 10, "bold")).pack(pady=5)
-        file_frame = tk.Frame(self.frame); file_frame.pack(pady=5)
-
-        self.entry = tk.Entry(file_frame, width=50, borderwidth=0, font=("Arial", 9))
-        self.entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(file_frame, text="Browse", command=self.browse_file, bg="#4682B4", fg="white")\
-            .pack(side=tk.RIGHT, padx=5)
-
-        self.scan_button = tk.Button(
-            self.frame, text="Extract Tags", command=self.extract_tags,
-            bg="white", fg="black", font=("Arial", 10, "bold"),
-            padx=10, state=tk.DISABLED, borderwidth=1, relief="solid"
-        )
-        self.scan_button.pack(pady=10)
-
-        log_frame = tk.Frame(self.frame, bg="#36454F"); log_frame.pack(
-            pady=5, padx=10, fill=tk.BOTH, expand=True
-        )
-        tk.Label(log_frame, text="Detected Service Tags:", bg="#36454F", fg="white", anchor="w").pack(fill=tk.X)
-
-        self.log_text = scrolledtext.ScrolledText(
-            log_frame, height=18, state=tk.DISABLED,
-            bg="black", fg="#00FF00", font=("Consolas", 9)
-        )
-        self.log_text.pack(fill=tk.BOTH, expand=True)
-
-    def browse_file(self):
-        path = filedialog.askopenfilename(
-            title="Select BIOS/ROM File",
-            filetypes=(("BIOS images", "*.bin *.rom *.fd *.efi"), ("All files", "*.*")),
-        )
-        if path:
-            self.entry.delete(0, tk.END)
-            self.entry.insert(0, path)
-            self.scan_button.config(state=tk.NORMAL)
-
-    def log_message(self, message: str):
-        self.log_text.configure(state=tk.NORMAL)
-        self.log_text.insert(tk.END, message + "\n")
-        self.log_text.see(tk.END)
-        self.log_text.configure(state=tk.DISABLED)
-
-    def clear_log(self):
-        self.log_text.configure(state=tk.NORMAL)
-        self.log_text.delete("1.0", tk.END)
-        self.log_text.configure(state=tk.DISABLED)
-
-    def extract_tags(self):
-        path = self.entry.get().strip()
-        if not path:
-            messagebox.showerror("Error", "Please select a BIOS/ROM file first.")
-            return
-
-        self.clear_log()
-        self.log_message(f"[+] Scanning file: {path}")
-
-        try:
-            with open(path, "rb") as f:
-                bios_data = f.read()
-        except Exception as e:
-            self.log_message(f"[!] Failed to read BIOS/ROM file: {e}")
-            messagebox.showerror("Error", f"Failed to read BIOS/ROM file:\n{e}")
-            return
-
-        self.log_message("[+] Searching for known Dell Service Tag patterns...")
-
-        service_tag_pattern = re.compile(rb"[A-Z0-9]{7}-[0-9A-F]{4}")
-        matches = service_tag_pattern.findall(bios_data)
-
-        if matches:
-            self.log_message("[+] Found potential Service Tags:")
-            unique_tags = sorted(set(match.decode("ascii") for match in matches))
-            for tag in unique_tags:
-                self.log_message(f"    - {tag}")
-        else:
-            self.log_message("[!] No Service Tags found in the provided file.")
-            messagebox.showwarning("No Tags Found", "No Service Tags found in the provided BIOS/ROM file.")
 
 class AssetManagerTab:
     def __init__(self, parent):
@@ -1657,13 +1575,11 @@ class DellToolsApp:
         self.unlocker_tab = BiosUnlockerTab(self.notebook)
         self.pfs_tab = DellPfsExtractorTab(self.notebook)
         self.password_tab = PasswordGeneratorTab(self.notebook)
-        self.service_tag_tab = ServiceTagExtractorTab(self.notebook)
         self.asset_tab = AssetManagerTab(self.notebook)
 
         self.notebook.add(self.unlocker_tab.frame, text="BIOS Unlocker")
         self.notebook.add(self.pfs_tab.frame, text="Dell PFS Extractor")
         self.notebook.add(self.password_tab.frame, text="Password Generator")
-        self.notebook.add(self.service_tag_tab.frame, text="Service Tag Extractor")
         self.notebook.add(self.asset_tab.frame, text="Asset Manager")
 
 def main():
