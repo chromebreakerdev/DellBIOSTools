@@ -25,6 +25,9 @@ A **prebuilt standalone Windows EXE is included** in this repository.
 That’s it.  
 No Python installation is required. ✅
 
+> **Note:** On first run, Windows SmartScreen may display a warning because the executable is unsigned.
+> Click **More info** → **Run anyway** to proceed.
+
 ------------------------------------------------------------
 ## 🔧 Quick Build From Source (Advanced / Optional)
 
