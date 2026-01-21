@@ -17,15 +17,12 @@ To create a standalone EXE without worrying about Python setup:
 1. Download this repo as ZIP and extract it.
 2. Double-click:
 
-    builddellbiostools.bat
-
-3. The script will:
+    builddellbiostools The script will:
    - Check if Python is installed
    - If missing, install it automatically
    - Upgrade pip and install PyInstaller
    - Compile `DellBiosTools.pyw` into a standalone EXE
    - Embed the custom icon from the icon folder (if present)
-   - Rename the EXE with a timestamp so Windows Explorer always shows the correct icon
    - Place the finished EXE in the project folder
 
 When it finishes, you’ll see something like:
