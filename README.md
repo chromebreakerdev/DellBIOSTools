@@ -33,28 +33,6 @@ No Python installation is required. ✅
 
 ------------------------------------------------------------
 
-## 🔧 Quick Build From Source (Advanced / Optional)
-
-To create a standalone EXE yourself:
-
-1. Download this repo as ZIP and extract it.
-2. Double-click:
-
-    builddellbiostools.bat
-
-The script will:
-- Check if Python is installed
-- If missing, install it automatically
-- Upgrade pip and install PyInstaller
-- Compile `DellBiosTools.pyw` into a standalone EXE
-- Embed the custom icon from the icon folder (if present)
-- Place the finished EXE in the project folder
-
-When it finishes, you’ll see something like:
-
-    DellBiosTools.exe
-
-------------------------------------------------------------
 ## 🔧 Manual Build (Advanced)
 
 1. Install Python 3.11+ from:
