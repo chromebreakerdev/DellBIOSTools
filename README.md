@@ -1,7 +1,5 @@
 # DellBIOSTools V2.5
 
-https://github.com/user-attachments/assets/73d3720e-0390-4011-ae4d-b0e051ed31b1
-
 ==================
 ## Requirements
 ------------
