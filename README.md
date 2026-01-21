@@ -32,35 +32,18 @@ No Python installation is required. ✅
 2f87dbabc6295f55b8e75109b46149db8f57584d463c77c179d963f2a3daf614
 
 ------------------------------------------------------------
+🔧 From Source (Developers / Advanced Users Only)
 
-## 🔧 Manual Build (Advanced)
+If you want to run DellBIOSTools directly from source (for development or research purposes):
+Requirements:
 
-1. Install Python 3.11+ from:
-   https://www.python.org/downloads/windows/
-   (Check “Add Python to PATH” during install)
+Python 3.11 or newer
 
-2. Open Command Prompt in this repo folder.
+Windows 10/11
 
-3. Upgrade pip and install PyInstaller:
+No build scripts are provided or supported.
+Prebuilt EXE releases are published separately via GitHub Releases.
 
-    pip install --upgrade pip
-    pip install pyinstaller pillow
-
-4. Build the EXE:
-
-    pyinstaller --noconfirm --onefile --windowed --icon icon\DellBiosTools.ico DellBiosTools.pyw
-
-5. The EXE will appear at:
-
-    dist\DellBiosTools.exe
-
-6. (Optional) Clean up temporary build files:
-
-    rmdir /s /q build
-    rmdir /s /q dist
-    del DellBiosTools.spec
-
-------------------------------------------------------------
 ## 🛠 Usage
 
 This tool combines several essential utilities for Dell BIOS management.
