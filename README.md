@@ -3,38 +3,54 @@
 ==================
 ## Requirements
 ------------
+- **None for normal use** (prebuilt EXE included)
+- Windows 10/11 recommended
+
+For advanced users building from source:
 - Python 3.11 or greater is required to run the raw Python code (`DellBiosTools.pyw`)
-- Windows 10/11 recommended for EXE build and usage
 
 ==================
 ## Preview
 
 ------------------------------------------------------------
-## 🚀 Quick Build (Recommended)
+## 🚀 Quick Start (Recommended)
 
-To create a standalone EXE without worrying about Python setup:
+A **prebuilt standalone Windows EXE is included** in this repository.
 
 1. Download this repo as ZIP and extract it.
 2. Double-click:
 
-    builddellbiostools The script will:
-   - Check if Python is installed
-   - If missing, install it automatically
-   - Upgrade pip and install PyInstaller
-   - Compile `DellBiosTools.pyw` into a standalone EXE
-   - Embed the custom icon from the icon folder (if present)
-   - Place the finished EXE in the project folder
+    DellBiosTools.exe
+
+That’s it.  
+No Python installation is required. ✅
+
+------------------------------------------------------------
+## 🔧 Quick Build From Source (Advanced / Optional)
+
+To create a standalone EXE yourself:
+
+1. Download this repo as ZIP and extract it.
+2. Double-click:
+
+    builddellbiostools.bat
+
+The script will:
+- Check if Python is installed
+- If missing, install it automatically
+- Upgrade pip and install PyInstaller
+- Compile `DellBiosTools.pyw` into a standalone EXE
+- Embed the custom icon from the icon folder (if present)
+- Place the finished EXE in the project folder
 
 When it finishes, you’ll see something like:
 
     DellBiosTools.exe
 
-in the same folder. ✅
-
 ------------------------------------------------------------
 ## 🔧 Manual Build (Advanced)
 
-1. Install Python 3.12+ from:
+1. Install Python 3.11+ from:
    https://www.python.org/downloads/windows/
    (Check “Add Python to PATH” during install)
 
@@ -43,7 +59,7 @@ in the same folder. ✅
 3. Upgrade pip and install PyInstaller:
 
     pip install --upgrade pip
-    pip install pyinstaller
+    pip install pyinstaller pillow
 
 4. Build the EXE:
 
@@ -62,24 +78,27 @@ in the same folder. ✅
 ------------------------------------------------------------
 ## 🛠 Usage
 
-This tool combines several essential utilities for Dell BIOS management:
+This tool combines several essential utilities for Dell BIOS management.
+Tabs are ordered by most commonly used functions first.
 
 ### 1. Dell BIOS Unlocker (8FC8 Patcher)
 - Unlocks Dell BIOS by patching specific 8FC8 suffix patterns
 - Select a BIOS file, patch it, flash it, and reboot
+- Requires an external programmer and a valid BIOS dump
 
 ### 2. Password Generator
 - Generates Dell master passwords from Service Tags
 - Supports multiple Dell suffix types (595B, D35B, 2A7B, 1D3B, 1F66, E7A8, etc.)
 
-### 3. Asset Manager (UPDATED in V2.5)
+### 3. Asset Manager
 - View, update, or clear Dell Asset Tag values
 - Useful for IT inventory and post-repair validation
+- Asset Tag reading depends on system firmware and SMBIOS support
 
-### 4. Dell PFS BIOS Extractor (NEW in V2.5)
+### 4. Dell PFS BIOS Extractor
    - NOTE: OUTPUT FROM THIS FUNCTION IS NOT TO BE USED IN PLACE OF A VALID BIOS DUMP .BIN FILE FROM YOUR DEVICE.
    - ONLY USE THE ORIGINAL BIOS DUMP .BIN FILE WHICH YOU SHOULD HAVE PULLED FROM THE DEVICE. MAKE A COPY OF THIS BIN FILE FOR SAFE KEEPING
-   - THEN USE THE COPY TO PATCH AND UPDATE THE DEVICE.  
+   - THEN USE THE COPY TO PATCH AND UPDATE THE DEVICE.
    - Extracts official Dell BIOS Update Packages (.EXE and .RCV)
    - Automatically creates an output folder next to the BIOS file:
 
@@ -88,7 +107,6 @@ This tool combines several essential utilities for Dell BIOS management:
    - Automatically opens the extracted folder in Windows Explorer
    - Requires no user selection of the output folder
    - Provides full logging of the extraction process
-   - Powered by Dell PFS Update Extractor technology
 
    Credit:
    This feature is powered by the Dell PFS Update Extractor by Plato Mavropoulos.
@@ -117,7 +135,7 @@ MIT — free to use, share, and modify
 - Original BIOS Unlocker tool by Rex98 & Techshack Cebu
 - Research by Dogbert and Asyncritus
 - Dell PFS Update Extractor by Plato Mavropoulos
-- Python tooling by chromebreakerdev
+- Tooling and integration by **chromebreakerdev**
 
 ------------------------------------------------------------
 ## ☕ Support My Work
