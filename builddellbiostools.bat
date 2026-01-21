@@ -1,144 +1,88 @@
 @echo off
-setlocal EnableExtensions
+title DellBIOSTools - Build EXE
+echo =========================================
+echo   DellBIOSTools EXE Builder (Hybrid)
+echo =========================================
+echo.
 
-rem =============================================================================
-rem  DellBiosTools - Build EXE (local)
-rem =============================================================================
+REM Force working directory to this BAT's location
+pushd "%~dp0"
 
-rem --- Safety: don't run from System32 ---
-if /I "%CD%"=="C:\Windows\System32" (
-    echo [!] Don't run from C:\Windows\System32.
-    echo     Open the DellBIOSTools folder in Explorer, type CMD in the address bar,
-    echo     and run this script again.
-    pause
-    exit /b 1
-)
+REM Repo paths
+set PYTHON_REAL=%LOCALAPPDATA%\Programs\Python\Python311\python.exe
+set PYTHON_INSTALLER=%CD%\python-3.11.9-amd64.exe
+set SCRIPT=%CD%\DellBiosTools.pyw
+set ICON_ICO=%CD%\icon\DellBiosTools.ico
+set ICON_PNG=%CD%\icon\*.png
 
-rem --- Safety: don't run as Administrator ---
-net session >nul 2>&1
+REM Check for real Python
+if exist "%PYTHON_REAL%" goto PYTHON_OK
+
+REM Try winget first (no MS Store source)
+where winget >nul 2>nul
 if %ERRORLEVEL%==0 (
-    echo [!] You're running this as Administrator.
-    echo     Close this window and run as a normal user.
+    echo Installing Python via winget...
+    winget install -e --id Python.Python.3.11 --source winget --accept-source-agreements --accept-package-agreements
+    if exist "%PYTHON_REAL%" goto PYTHON_OK
+    echo winget failed, falling back to bundled installer
+)
+
+REM Bundled installer fallback
+echo Installing Python from bundled installer, please wait...
+if not exist "%PYTHON_INSTALLER%" (
+    echo ERROR: Bundled Python installer not found
     pause
+    popd
     exit /b 1
 )
 
-echo =====================================
-echo   DellBiosTools - Build EXE (local)
-echo =====================================
-echo [i] Working dir: %CD%
-echo.
+"%PYTHON_INSTALLER%" /passive InstallAllUsers=0 PrependPath=0 Include_pip=1
+timeout /t 5 >nul
 
-rem --- Core settings -----------------------------------------------------------
-set "APP_NAME=DellBiosTools"
-set "ENTRY=DellBiosTools.pyw"
-
-set "WORK=__pyi_tmp\build"
-set "SPEC=__pyi_tmp\spec"
-
-set "ICONDIR=%CD%\icon"
-set "ICONFILE=%ICONDIR%\DellBiosTools.ico"
-
-rem --- Check main script exists ------------------------------------------------
-if not exist "%ENTRY%" (
-    echo [!] %ENTRY% not found in this folder:
-    echo     %CD%
-    echo     Make sure this BAT lives next to %ENTRY%.
+if not exist "%PYTHON_REAL%" (
+    echo ERROR: Python installation failed
     pause
+    popd
     exit /b 1
 )
 
-rem --- Icon handling -----------------------------------------------------------
-set "HAVE_ICON=0"
-if exist "%ICONFILE%" (
-    set "HAVE_ICON=1"
-    echo [OK] Icon will be embedded: %ICONFILE%
-) else (
-    echo [i] No icon found at: %ICONFILE%
-)
+:PYTHON_OK
+echo Using Python:
+echo %PYTHON_REAL%
 echo.
 
-rem --- Ensure PyInstaller is available ----------------------------------------
-echo [*] Ensuring PyInstaller is available...
-python -m pip install --upgrade pip pyinstaller
-if errorlevel 1 (
-    echo [!] pip/pyinstaller step failed.
+REM Install dependencies
+"%PYTHON_REAL%" -m ensurepip --upgrade
+"%PYTHON_REAL%" -m pip install --upgrade pip
+"%PYTHON_REAL%" -m pip install pillow pyinstaller
+
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Python dependency installation failed
     pause
-    exit /b 1
-)
-echo.
-
-rem --- Clean previous build artifacts -----------------------------------------
-echo [*] Cleaning previous build artifacts...
-rmdir /s /q "%WORK%" 2>nul
-rmdir /s /q "%SPEC%" 2>nul
-rmdir /s /q "build" 2>nul
-rmdir /s /q "dist" 2>nul
-del /q "%APP_NAME%.spec" 2>nul
-echo.
-
-rem --- Build -------------------------------------------------------------------
-echo [*] Building...
-
-if "%HAVE_ICON%"=="1" (
-    rem Show exact command
-    echo python -m PyInstaller -F -w --clean --noconfirm -n "%APP_NAME%" --distpath "." --workpath "%WORK%" --specpath "%SPEC%" --paths "%CD%\vendor" --icon "%ICONFILE%" "%ENTRY%"
-    echo.
-    python -m PyInstaller -F -w --clean --noconfirm ^
-        -n "%APP_NAME%" ^
-        --distpath "." ^
-        --workpath "%WORK%" ^
-        --specpath "%SPEC%" ^
-        --paths "%CD%\vendor" ^
-        --icon "%ICONFILE%" ^
-        "%ENTRY%"
-) else (
-    rem No icon
-    echo python -m PyInstaller -F -w --clean --noconfirm -n "%APP_NAME%" --distpath "." --workpath "%WORK%" --specpath "%SPEC%" --paths "%CD%\vendor" "%ENTRY%"
-    echo.
-    python -m PyInstaller -F -w --clean --noconfirm ^
-        -n "%APP_NAME%" ^
-        --distpath "." ^
-        --workpath "%WORK%" ^
-        --specpath "%SPEC%" ^
-        --paths "%CD%\vendor" ^
-        "%ENTRY%"
-)
-
-if errorlevel 1 (
-    echo.
-    echo [!] Build failed.
-    pause
+    popd
     exit /b 1
 )
 
-echo.
-echo [OK] PyInstaller finished.
+REM Build EXE into repo root
+echo Building DellBIOSTools.exe...
+"%PYTHON_REAL%" -m PyInstaller --onefile --noconsole --clean --distpath "%CD%" --workpath "%TEMP%\pyi_work" --specpath "%TEMP%\pyi_spec" --icon "%ICON_ICO%" --add-data "%ICON_PNG%;icon" --name DellBIOSTools "%SCRIPT%"
 
-rem --- Final EXE check ---------------------------------------------------------
-if exist "%APP_NAME%.exe" (
-    echo [OK] Final EXE: %CD%\%APP_NAME%.exe
-) else (
-    if exist ".\dist\%APP_NAME%\%APP_NAME%.exe" (
-        move /Y ".\dist\%APP_NAME%\%APP_NAME%.exe" ".\%APP_NAME%.exe" >nul 2>&1
-    )
-    if exist "%APP_NAME%.exe" (
-        echo [OK] Final EXE moved to: %CD%\%APP_NAME%.exe
-    ) else (
-        echo [!] Build finished but EXE not found.
-    )
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: PyInstaller build failed
+    pause
+    popd
+    exit /b 1
 )
 
-rem --- Cleanup temp dirs -------------------------------------------------------
+REM Cleanup
+rmdir /s /q "%TEMP%\pyi_work" >nul 2>nul
+rmdir /s /q "%TEMP%\pyi_spec" >nul 2>nul
+del /q "%CD%\DellBIOSTools.spec" >nul 2>nul
+
 echo.
-echo [*] Cleaning temp...
-rmdir /s /q "%WORK%" 2>nul
-rmdir /s /q "%SPEC%" 2>nul
-rmdir /s /q "__pyi_tmp" 2>nul
+echo Build complete
+echo DellBIOSTools.exe created in repo root
 echo.
 
-echo Done.
-echo.
 pause
-endlocal
-exit /b 0
+popd
