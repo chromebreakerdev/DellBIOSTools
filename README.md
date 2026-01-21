@@ -3,27 +3,24 @@
 ==================
 ## Requirements
 ------------
-- **None for normal use** (prebuilt EXE included)
+- **None for normal use** (prebuilt Windows EXE available)
 - Windows 10/11 recommended
 
 For advanced users building from source:
 - Python 3.11 or greater is required to run the raw Python code (`DellBiosTools.pyw`)
 
 ==================
-## Preview
-
-------------------------------------------------------------
 ## 🚀 Quick Start (Recommended)
 
-A **prebuilt standalone Windows EXE is included** in this repository.
+A **prebuilt standalone Windows EXE** is available via GitHub Releases.
 
-1. Download this repo as ZIP and extract it.
-2. Double-click:
+### Download
+👉 https://github.com/chromebreakerdev/DellBIOSTools/releases/latest
 
-    DellBiosTools.exe
+1. Download **DellBiosTools_v2.5.zip**
+2. Extract the ZIP
+3. Double-click:
 
-That’s it.  
-No Python installation is required. ✅
 
 > **Note:** On first run, Windows SmartScreen may display a warning because the executable is unsigned.
 > Click **More info** → **Run anyway** to proceed.
