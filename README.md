@@ -27,12 +27,12 @@ A **prebuilt standalone Windows EXE** is available via GitHub Releases.
 
 No Python installation is required. ✅
 
----
-
 ### 🔐 SHA-256 Verification (ZIP)
 
 2f87dbabc6295f55b8e75109b46149db8f57584d463c77c179d963f2a3daf614
+
 ------------------------------------------------------------
+
 ## 🔧 Quick Build From Source (Advanced / Optional)
 
 To create a standalone EXE yourself:
