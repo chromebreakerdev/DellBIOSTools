@@ -31,6 +31,7 @@ No Python installation is required. ✅
 
 2f87dbabc6295f55b8e75109b46149db8f57584d463c77c179d963f2a3daf614
 
+Prebuilt EXE releases may include additional UI enhancements not present in the raw Python source.
 ------------------------------------------------------------
 🔧 From Source (Developers / Advanced Users Only)
 
