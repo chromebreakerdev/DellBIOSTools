@@ -29,7 +29,7 @@ No Python installation is required. ✅
 
 ### 🔐 SHA-256 Verification (ZIP)
 
-2f87dbabc6295f55b8e75109b46149db8f57584d463c77c179d963f2a3daf614
+SHA-256: a9ba938d76848687f540300e0cf4adedc118b6765002a7025c6cdb4ed904b68e
 
 *prebuilt exe releases may include additional ui enhancements not present in the raw python source.*
 
