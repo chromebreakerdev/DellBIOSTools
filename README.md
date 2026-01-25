@@ -27,10 +27,6 @@ A **prebuilt standalone Windows EXE** is available via GitHub Releases.
 
 No Python installation is required. ✅
 
-### 🔐 SHA-256 Verification (ZIP)
-
-SHA-256: a9ba938d76848687f540300e0cf4adedc118b6765002a7025c6cdb4ed904b68e
-
 *prebuilt exe releases may include additional ui enhancements not present in the raw python source.*
 
 ------------------------------------------------------------
