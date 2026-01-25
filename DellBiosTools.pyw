@@ -1,5 +1,14 @@
+import sys
+if sys.stdout is None:
+    pass
+else:
+    sys.stdout = open("nul", "w")
+    sys.stderr = open("nul", "w")
+
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
+
 import re
 import os
 import sys
@@ -13,6 +22,8 @@ from collections import defaultdict
 from typing import List, Dict, Optional
 from datetime import datetime
 
+
+
 # -------------------------------------------------
 # Pillow (safe for PyInstaller EXE)
 # -------------------------------------------------
@@ -22,46 +33,89 @@ except ImportError:
     Image = None
     ImageTk = None
 
-# -------------------------------------------------
-# PyInstaller-safe resource loader
-# -------------------------------------------------
-def resource_path(relative_path):
+# ==========================================================
+# Application base path + vendor folder support
+# ==========================================================
+
+def app_base_path():
     """
-    Get absolute path to resource.
-    Works for:
-      - normal .py/.pyw execution
-      - PyInstaller-built EXE
-    """
-    try:
-        base_path = sys._MEIPASS  # PyInstaller temp folder
-    except AttributeError:
-        base_path = os.path.abspath(os.path.dirname(__file__))
-
-    return os.path.join(base_path, relative_path)
-
-
-
-# =============================================================================
-# VENDOR PATH & SHIM FOR biosutilities (needed for EXE builds)
-# =============================================================================
-
-def get_exe_dir():
-    """
-    Return the directory of the running EXE when frozen, otherwise
-    the directory of this .pyw file.
+    Resolve base directory for both .pyw and PyInstaller EXE.
     """
     if getattr(sys, "frozen", False):
         return os.path.dirname(sys.executable)
     return os.path.dirname(os.path.abspath(__file__))
 
-BASE_DIR = get_exe_dir()
+BASE_DIR = app_base_path()
 
-# vendor/ contains dell_pfs_extract and biosutilities packages
 VENDOR_DIR = os.path.join(BASE_DIR, "vendor")
+
 if VENDOR_DIR not in sys.path:
     sys.path.insert(0, VENDOR_DIR)
 
-# --- biosutilities shim ------------------------------------------------------
+# ==========================================================
+# Logging helper
+# ==========================================================
+
+def log(message: str):
+    """
+    Central logging helper.
+    Safe to call before or after GUI init.
+    """
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    print(f"[{timestamp}] {message}")
+
+    try:
+        if "app" in globals() and hasattr(app, "log_text"):
+            app.log_text.configure(state=tk.NORMAL)
+            app.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
+            app.log_text.configure(state=tk.DISABLED)
+            app.log_text.see(tk.END)
+    except Exception:
+        pass
+
+# ==========================================================
+# PyInstaller-safe runtime paths + vendor import support
+# ==========================================================
+
+def runtime_base_dir():
+    """
+    Returns the directory where bundled resources live.
+    - PyInstaller onefile/onedir: sys._MEIPASS
+    - Normal .py/.pyw execution: this file's directory
+    """
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+RUNTIME_BASE = runtime_base_dir()
+
+
+def resource_path(relative_path):
+    """
+    Get absolute path to a bundled resource.
+    Works for source and PyInstaller EXE.
+    """
+    return os.path.join(RUNTIME_BASE, relative_path)
+
+
+# ----------------------------------------------------------
+# Ensure vendor imports work (CRITICAL for PFS extractor)
+# ----------------------------------------------------------
+
+# Add the *parent* of vendor to sys.path
+if RUNTIME_BASE not in sys.path:
+    sys.path.insert(0, RUNTIME_BASE)
+
+# Add vendor itself for legacy absolute imports
+VENDOR_DIR = os.path.join(RUNTIME_BASE, "vendor")
+if VENDOR_DIR not in sys.path:
+    sys.path.insert(0, VENDOR_DIR)
+
+
+# ----------------------------------------------------------
+# Optional biosutilities shim (EXE-safe)
+# ----------------------------------------------------------
 try:
     import biosutilities  # noqa: F401
 except ImportError:
@@ -72,13 +126,11 @@ except ImportError:
         pass
 
 
-# ========================================================================
-# >>> ADD THIS BLOCK (REQUIRED FOR PFS EXTRACTOR TO WORK) <<<
-# ========================================================================
-try:
-    from vendor.dell_pfs_extract import run_pfs_extract
-except Exception:
-    run_pfs_extract = None
+# ----------------------------------------------------------
+# PFS extractor import (FAIL LOUDLY during testing)
+# ----------------------------------------------------------
+from vendor.dell_pfs_extract import run_pfs_extract
+
 # ========================================================================
 
 
@@ -253,14 +305,33 @@ def get_asset_tag_cim_only() -> str:
 REQUIRED_DLLS = ["BIOSIntf.dll"]  # minimal required; others vary by build
 
 def candidate_cctk_paths():
+    paths = []
+
+    # --------------------------------------------------
+    # 1) PyInstaller onefile bundle (MOST IMPORTANT)
+    # --------------------------------------------------
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        paths.extend([
+            os.path.join(sys._MEIPASS, "vendor", "cctk", "x86_64", "cctk.exe"),
+            os.path.join(sys._MEIPASS, "vendor", "cctk", "X86_64", "cctk.exe"),
+        ])
+
+    # --------------------------------------------------
+    # 2) Existing logic (UNCHANGED)
+    # --------------------------------------------------
+
     # Root-of-drive vendor drop (supports \vendor\cctk\x86_64)
     maybe_root = os.path.abspath(r"\vendor\cctk\x86_64\cctk.exe")
     maybe_root_alt = os.path.abspath(r"\vendor\cctk\X86_64\cctk.exe")
+
     # Env override
     env_dir = os.environ.get("DELL_CCTK_DIR", "")
     env_exe = os.path.join(env_dir, "cctk.exe") if env_dir else ""
-    return [
-        maybe_root, maybe_root_alt, env_exe,
+
+    paths.extend([
+        maybe_root,
+        maybe_root_alt,
+        env_exe,
         os.path.join(BASE_DIR, "vendor", "cctk", "x86_64", "cctk.exe"),
         os.path.join(BASE_DIR, "vendor", "cctk", "X86_64", "cctk.exe"),
         os.path.join(BASE_DIR, "cctk", "x86_64", "cctk.exe"),
@@ -268,7 +339,10 @@ def candidate_cctk_paths():
         r"X:\Windows\System32\cctk\X86_64\cctk.exe",
         r"C:\Program Files (x86)\Dell\Command Configure\X86_64\cctk.exe",
         r"C:\Program Files\Dell\Command Configure\X86_64\cctk.exe",
-    ]
+    ])
+
+    return paths
+
 
 def find_cctk_bundle():
     tried = []
@@ -989,16 +1063,12 @@ class DellPfsExtractorTab:
         self.log_area.config(state="disabled")
 
     def get_default_output_folder(self, input_path: str) -> str:
-        """
-        Default output folder:
-            C:\path\XPS_9520_1.23.0.exe
-            -> C:\path\XPS_9520_1.23.0_EXTRACTED
-        """
         base_dir = os.path.dirname(input_path)
         stem = os.path.splitext(os.path.basename(input_path))[0]
         out_dir = os.path.join(base_dir, stem + "_EXTRACTED")
         os.makedirs(out_dir, exist_ok=True)
         return out_dir
+
 
     def open_folder(self, folder: str):
         """Open folder in Explorer (Windows)."""
@@ -1125,9 +1195,7 @@ class BiosUnlockerTab:
         )
         self.log_text.pack(fill=tk.BOTH, expand=True)
 
-        about_text = """ English Version of the Rex98-8FC8-Patcher
-Based on the original tool by Rex98 & Techshack Cebu
-Use with caution: Improper BIOS modification can damage your system."""
+        about_text = ""
 
         self.log_text.configure(state=tk.NORMAL)
         self.log_text.insert(tk.END, "Welcome to Dell-8FC8-BIOS-UNLOCKER\n")
@@ -1665,18 +1733,14 @@ def main():
     ensure_admin_windows()
     root = tk.Tk()
     app = DellToolsApp(root)
-    # Create static logo (safe)
+
     # -------------------------------------------------
-    # Bottom banner (text + fading logo together)
+    # Bottom banner (logo only, no text)
     # -------------------------------------------------
     banner = tk.Frame(root, bg="#36454F")
     banner.pack(side="bottom", fill="x")
 
-    info_text = (
-        "English Version of the Rex98 8FC8 Patcher\n"
-        "Based on the original tool by Rex98 & Techsachk Cebu\n"
-        "Use with caution: Improper BIOS modification can damage your system."
-    )
+    info_text = ""
 
     tk.Label(
         banner,
@@ -1687,8 +1751,14 @@ def main():
         font=("Segoe UI", 9)
     ).pack(pady=(8, 4))
 
-    app.logo = FadeLogo(banner, resource_path(os.path.join('icon', 'DellBiosTools.png')), size=48)
+    app.logo = FadeLogo(
+        banner,
+        resource_path(os.path.join("icon", "DellBiosTools.png")),
+        size=48
+    )
+
     root.mainloop()
+
 
 if __name__ == "__main__":
     try:
