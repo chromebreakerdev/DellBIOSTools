@@ -17,7 +17,7 @@ A **prebuilt standalone Windows EXE** is available via GitHub Releases.
 ### Download
 👉 https://github.com/chromebreakerdev/DellBIOSTools/releases/latest
 
-1. Download **DellBiosTools_v2.5.1 zip**
+1. Download **DellBIOSTools_v2.5.1 zip**
 2. Extract the ZIP
 3. Double-click:
 
