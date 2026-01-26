@@ -86,9 +86,18 @@ If a stable read cannot be achieved, removal of the SPI chip may be required.
 ------------------------------------------------------------
 ## ⚠️ Disclaimer
 
-This tool is provided as-is with no warranty.
-Always back up your BIOS before patching.
-Use at your own risk.
+This project is provided for educational and research purposes only.
+
+The software is distributed as-is, without warranty of any kind, express or implied.
+The author assumes no responsibility or liability for any damage, data loss, hardware failure, or legal issues resulting from the use or misuse of this tool.
+
+Always back up your BIOS before patching or flashing
+
+Improper flashing can permanently damage hardware
+
+Use this tool entirely at your own risk
+
+You are responsible for ensuring you have proper authorization to modify any device or firmware
 
 ------------------------------------------------------------
 ## 📜 License
