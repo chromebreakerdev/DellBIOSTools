@@ -108,7 +108,7 @@ MIT — free to use, share, and modify
 ## Credits
 
 - Original BIOS Unlocker tool by Rex98 & Techshack Cebu
-- Research by Dogbert and Asyncritus
+- Research by hpgl and Asyncritus
 - Dell PFS Update Extractor by Plato Mavropoulos
 - Python integration by **chromebreakerdev**
 
