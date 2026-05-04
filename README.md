@@ -47,8 +47,8 @@ Prebuilt EXE releases are published separately via GitHub Releases.
 This tool combines several essential utilities for Dell BIOS management.
 Tabs are ordered by most commonly used functions first.
 
-### 1. Dell BIOS Unlocker (8FC8 Patcher)
-- Unlocks Dell BIOS by patching specific 8FC8 suffix patterns
+### 1. Dell BIOS Unlocker 
+- Unlocks Dell BIOS by patching specific patterns
 - Select a BIOS file, patch it, flash it, and reboot
 - Requires an external programmer and a valid BIOS dump
 
