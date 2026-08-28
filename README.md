@@ -76,7 +76,123 @@ Tabs are ordered by most commonly used functions first.
 
    Credit:
    This feature is powered by the Dell PFS Update Extractor by Plato Mavropoulos.
+------------------------------------------------------------
+## 🧪 DellBIOSTools V2.6 Beta
 
+DellBIOSTools **V2.6 Beta** is an optional beta release that adds new BIOS dump verification, comparison, and analysis tools while retaining the existing DellBIOSTools features.
+
+V2.5 remains available as the current stable release.
+
+### What's New in V2.6 Beta
+
+#### 🔍 BIOS Compare / Verify
+
+A new **BIOS Compare / Verify** tab has been added for working with BIOS `.BIN` files.
+
+### Compare Two Files
+
+Compare an original BIOS dump against a modified or patched BIOS dump.
+
+The comparison includes:
+
+- SHA-256 hash of both files
+- File size comparison
+- Total number of changed bytes
+- Percentage of unchanged data
+- Changed byte regions
+- First 200 differing bytes
+- Ability to save a comparison report
+
+The comparison function is read-only and does not modify either BIOS file.
+
+---
+
+### Verify Multiple Reads
+
+Verify two or more BIOS reads taken from the same SPI flash chip.
+
+The tool checks:
+
+- File size
+- SHA-256 hash
+- Byte-for-byte consistency
+
+A **PASS** is reported only when all selected BIOS reads are identical.
+
+This can help verify that a programmer, clip, or pogo-pin connection is producing stable and repeatable BIOS reads before modifying or flashing the chip.
+
+---
+
+#### 🔬 BIOS Dump Analyzer
+
+A new BIOS Dump Analyzer performs basic checks on a BIOS `.BIN` file.
+
+The analyzer reports:
+
+- File size
+- SHA-256 hash
+- `FF` byte distribution
+- `00` byte distribution
+- Longest `FF` run
+- Longest `00` run
+- Intel firmware signature detection
+- Basic blank/erased dump warnings
+- Selected flash-chip information
+- Flash-chip capacity vs BIOS dump size
+
+These checks are intended to help identify obviously incorrect, incomplete, blank, or mismatched BIOS dumps.
+
+The analyzer does not guarantee that a BIOS image is valid or safe to flash.
+
+---
+
+#### 💾 Flash Chip Database
+
+V2.6 Beta adds an expanded SPI flash-chip database for BIOS repair work.
+
+Where information is available, the program can display:
+
+- Chip manufacturer
+- Chip model
+- Capacity
+- Voltage
+- T48 programmer support
+- Supported package
+- ISP support
+
+The database includes additional device information derived from the **XGecu T48 programmer device-support list**.
+
+Package information relevant to Dell BIOS repair includes:
+
+- SOIC8
+- SOP8
+- WSON8
+
+If the exact capacity of a selected chip is not available in the database, the BIOS Dump Analyzer allows the capacity to be entered manually.
+
+---
+
+### Recommended V2.6 Beta Workflow
+
+When reading a BIOS with an external programmer:
+
+1. Identify and select the correct SPI flash chip.
+2. Read the BIOS chip and save the first dump.
+3. Read the chip again and save a second dump.
+4. Use **Verify Multiple Reads** to confirm the dumps are identical.
+5. Preserve an untouched copy of the verified original BIOS.
+6. Make a separate working copy.
+7. Patch or modify the working copy.
+8. Use **Compare Two Files** to compare the modified BIOS against the original.
+9. Review the reported changes before flashing.
+
+> **Beta Notice:** The new V2.6 analysis and verification features are provided as additional diagnostic tools. Always preserve an untouched BIOS backup and independently verify firmware and flash-chip information before programming hardware.
+### Download V2.6 Beta
+
+👉 https://github.com/chromebreakerdev/DellBIOSTools/releases/tag/v2.6-beta
+
+Download **DellBIOSTools_V2_6_Beta.exe** from the release assets.
+------------------------------------------------------------
 ------------------------------------------------------------
 ## IN-CIRCUIT FLASHING NOTES
 
